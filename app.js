@@ -15,7 +15,7 @@
  *
  * INPUT AND OUTPUT
  * 	we need a way to determine user or admin priviledges
- * we need a way to accept user inputs (prompts and logs??)
+ * we need a way to accept user inputs (prompts and logs?? confirms)
  * classification of cars
  *
  * FUNCTIONALITY
@@ -45,9 +45,11 @@ const cars = [
   {
     name: "car2",
     isAvailable: false,
-    classification: "a",
+    classification: "A",
   },
 ];
+// we are making an assumption that we have only S model or A models for car classification
+
 function init() {
   const userOrAdmin = prompt(
     'please enter "user" if you are a user or "admin" if you are an admin '
@@ -55,24 +57,22 @@ function init() {
 
   // logged in as user
   if (userOrAdmin && userOrAdmin.toLowerCase() === "user") {
-    coloredConsole(userOrAdmin, "black");
+    console.clear();
+    coloredConsole("hey there, here's a list of cars", "black");
+    console.table(cars);
   }
 
   // logged in as admin
   if (userOrAdmin && userOrAdmin.toLowerCase() === "admin") {
+    console.clear();
     coloredConsole(
-      "welcome admin, you are able to add new cars to the list of cars and determine whether or not they are avilable",
+      "welcome admin, you are able to add new cars to the list of cars and determine whether or not they are available",
       "green"
     );
-    const choice = confirm("do you want to add a new car??");
-    if (choice) {
-      // coloredConsole("new car", "green");
-      addNewCar();
-    } else {
-      console.log("something is wrong");
-    }
+    // call admin duties
+    adminDuties();
   }
-
+  // neither of the above logged in case
   if (!userOrAdmin) {
     coloredConsole(
       "you have to register as either a user or an admin, please try again",
@@ -89,24 +89,82 @@ function init() {
   }
 }
 
+function adminDuties() {
+  // you can either add a new car as an admin or update the availability of one
+  const adminChoice = confirm("do you want to add a new car??");
+  if (adminChoice) {
+    addNewCar();
+  } else {
+    const available = confirm(
+      "do you want to update the availability of a car?"
+    );
+    if (available) {
+      const name = prompt("enter the name of the car");
+      updateAvailability(name);
+    } else {
+      coloredConsole(
+        "sorry you can not perform more than those two actions as an admin",
+        "red"
+      );
+    }
+  }
+}
+function addNewCar() {
+  const name = prompt("please enter the name of the car");
+  // using names to ensure uniqueness because there's no access to randomly generated ID's
+  const isDuplicate = cars.find((car) => car.name === name);
+  if (!isDuplicate) {
+    const isAvailable = confirm("is the car available?? \n click ok for yes");
+    const isSmodel = confirm("it is S model?");
+    let classification;
+    if (isSmodel) {
+      classification = "S";
+    } else {
+      classification = "A";
+    }
+
+    const newCar = {
+      name,
+      isAvailable,
+      classification,
+    };
+
+    cars.push(newCar);
+
+    console.table(cars);
+  } else {
+    coloredConsole(
+      `sorry a car with that name "${isDuplicate.name}" is already present in the store, maybe add a number to ensure uniqueness`,
+      "red"
+    );
+    // call admin duties again
+    adminDuties();
+  }
+}
+
+function updateAvailability(name) {
+  const soughtCar = cars.find((car) => car.name === name);
+  if (soughtCar) {
+    const isNowAvailable = confirm("the car is now available??");
+    if (isNowAvailable) {
+      soughtCar.isAvailable = true;
+      console.table(soughtCar);
+    } else {
+      soughtCar.isAvailable = false;
+      console.table(soughtCar);
+    }
+  } else {
+    coloredConsole("sorry no car like that was found", "red");
+  }
+}
+
+// initialize it all with pressing the enter key
 document.addEventListener("keypress", (e) => {
   if (e.key === "Enter") {
     init();
   }
 });
-
-// extra work
-
-function addNewCar() {
-  const carName = prompt("please enter the name of the car");
-  const isAvailable = confirm("is the car available?? \n click ok for yes");
-
-  const newCar = {
-    name: carName,
-    isAvailable,
-  };
-  cars.push(newCar);
-}
+// extra work to make console pretty
 function coloredConsole(string, color) {
   let format = "";
   switch (color) {
