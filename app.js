@@ -36,7 +36,8 @@ console.log(
 );
 
 // global store for cars
-const cars = [
+const localStorageCars = JSON.parse(localStorage.getItem("car store"));
+const cars = localStorageCars || [
   {
     name: "car1",
     isAvailable: true,
@@ -173,6 +174,8 @@ function addNewCar() {
     };
 
     cars.push(newCar);
+    // update store
+    updateStore(cars);
 
     console.table(cars);
   } else {
@@ -202,12 +205,15 @@ function updateAvailability(name, isAdmin = false) {
   } else {
     coloredConsole("sorry no car like that was found", "red");
   }
+
+  updateStore(cars);
+  // after everything update our store
 }
 
 // rent the car
 function rentCar(rentedCarName) {
   const carInStore = cars.find((car) => car.name === rentedCarName);
-  if (carsInStore) {
+  if (carInStore) {
     updateAvailability(carInStore.name, false);
   } else {
     coloredConsole(
@@ -219,6 +225,12 @@ function rentCar(rentedCarName) {
     `Congratulations you have completed you rent order, the car will be made available to you in 24hrs`,
     "green"
   );
+}
+
+// update the store functionality;
+function updateStore(cars) {
+  const storeCars = JSON.stringify(cars);
+  localStorage.setItem("car store", storeCars);
 }
 
 // initialize it all with pressing the enter key
