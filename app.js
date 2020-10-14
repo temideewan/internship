@@ -47,8 +47,18 @@ const cars = [
     isAvailable: false,
     classification: "A",
   },
+  {
+    name: "car3",
+    isAvailable: true,
+    classification: "A",
+  },
+  {
+    name: "car2",
+    isAvailable: false,
+    classification: "A",
+  },
 ];
-// we are making an assumption that we have only S model or A models for car classification
+// we are making an assumption that we have only S model or A model for car classification
 
 function init() {
   const userOrAdmin = prompt(
@@ -57,9 +67,14 @@ function init() {
 
   // logged in as user
   if (userOrAdmin && userOrAdmin.toLowerCase() === "user") {
+    // welcome
     console.clear();
-    coloredConsole("hey there, here's a list of cars", "black");
-    console.table(cars);
+    coloredConsole(
+      "hello there! \n here's a list of cars available for rental",
+      "black"
+    );
+
+    userDuties();
   }
 
   // logged in as admin
@@ -72,8 +87,10 @@ function init() {
     // call admin duties
     adminDuties();
   }
+
   // neither of the above logged in case
   if (!userOrAdmin) {
+    // null value
     coloredConsole(
       "you have to register as either a user or an admin, please try again",
       "red"
@@ -82,11 +99,36 @@ function init() {
     userOrAdmin.toLowerCase() !== "user" &&
     userOrAdmin.toLowerCase() !== "admin"
   ) {
+    // login with another value other than specified
     coloredConsole(
       "But you were told to enter admin or user naa, please try again",
       "red"
     );
   }
+}
+
+function userDuties() {
+  // check available Cars
+  const availableCars = cars
+    .filter((car) => car.isAvailable === true)
+    .map((car) => {
+      // get just the name and its classification off the returned cars
+      const { name, classification } = car;
+      return { name, classification };
+    });
+
+  console.table(availableCars);
+  coloredConsole(
+    "you can select choose a car you want by typing the name in the prompt above",
+    "green"
+  );
+
+  const selectedCar = prompt("so which car do you want to rent");
+
+  // book a car
+  rentCar(selectedCar);
+
+  // car gets taken off of available cars list
 }
 
 function adminDuties() {
@@ -100,7 +142,7 @@ function adminDuties() {
     );
     if (available) {
       const name = prompt("enter the name of the car");
-      updateAvailability(name);
+      updateAvailability(name, true);
     } else {
       coloredConsole(
         "sorry you can not perform more than those two actions as an admin",
@@ -109,6 +151,7 @@ function adminDuties() {
     }
   }
 }
+
 function addNewCar() {
   const name = prompt("please enter the name of the car");
   // using names to ensure uniqueness because there's no access to randomly generated ID's
@@ -142,9 +185,9 @@ function addNewCar() {
   }
 }
 
-function updateAvailability(name) {
+function updateAvailability(name, isAdmin = false) {
   const soughtCar = cars.find((car) => car.name === name);
-  if (soughtCar) {
+  if (soughtCar && isAdmin) {
     const isNowAvailable = confirm("the car is now available??");
     if (isNowAvailable) {
       soughtCar.isAvailable = true;
@@ -153,9 +196,29 @@ function updateAvailability(name) {
       soughtCar.isAvailable = false;
       console.table(soughtCar);
     }
+  } else if (soughtCar && !isAdmin) {
+    // to cater for user making updates to availability
+    soughtCar.isAvailable = !soughtCar.isAvailable;
   } else {
     coloredConsole("sorry no car like that was found", "red");
   }
+}
+
+// rent the car
+function rentCar(rentedCarName) {
+  const carInStore = cars.find((car) => car.name === rentedCarName);
+  if (carsInStore) {
+    updateAvailability(carInStore.name, false);
+  } else {
+    coloredConsole(
+      `you may want to check the list of cars again and choose from the available cars`,
+      "red"
+    );
+  }
+  coloredConsole(
+    `Congratulations you have completed you rent order, the car will be made available to you in 24hrs`,
+    "green"
+  );
 }
 
 // initialize it all with pressing the enter key
@@ -181,7 +244,7 @@ function coloredConsole(string, color) {
         "color: red; padding: 3px 5px; font-size: 1.2em; background: rgba(255,0,0,0.2)";
       break;
     default:
-      format = "";
+      format = "padding: 3px 5px; font-size: 1.2em";
       break;
   }
 
