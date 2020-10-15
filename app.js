@@ -285,7 +285,7 @@ function addNewCar() {
   const isDuplicate = cars.find((car) => car.name === name);
   if (!isDuplicate) {
     const isAvailable = confirm("is the car available?? \n click ok for yes");
-    const isSmodel = confirm("it is S model?");
+    const isSmodel = confirm("it is an S model?");
     let classification;
     if (isSmodel) {
       classification = "S";
