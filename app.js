@@ -42,24 +42,29 @@ const cars = localStorageCars || [
     name: "car1",
     isAvailable: true,
     classification: "S",
+    status: null,
   },
   {
     name: "car2",
     isAvailable: false,
     classification: "A",
+    status: null,
   },
   {
     name: "car3",
     isAvailable: true,
     classification: "A",
+    status: null,
   },
   {
     name: "car2",
     isAvailable: false,
     classification: "A",
+    status: null,
   },
 ];
 // we are making an assumption that we have only S model or A model for car classification
+// status can either be pending, ongoing or complete depending on the situation of orders
 
 function init() {
   const userOrAdmin = prompt(
@@ -108,30 +113,140 @@ function init() {
   }
 }
 
+//  USERS
+//////////////////////////////////////
 function userDuties() {
   // check available Cars
-  const availableCars = cars
-    .filter((car) => car.isAvailable === true)
-    .map((car) => {
-      // get just the name and its classification off the returned cars
-      const { name, classification } = car;
-      return { name, classification };
-    });
+  const availableCars = getAvailableCars();
 
-  console.table(availableCars);
+  if (!availableCars) {
+    return coloredConsole(
+      "sorry at the moment there are no cars available",
+      "red"
+    );
+  }
+
   coloredConsole(
-    "you can select choose a car you want by typing the name in the prompt above",
+    "you can select a car from the list of cars availabe by typing the name in the prompt above",
     "green"
   );
-
+  console.table(availableCars);
   const selectedCar = prompt("so which car do you want to rent");
 
   // book a car
-  rentCar(selectedCar);
+  const carSelected = rentCar(selectedCar);
+
+  // update the status
+  updateStatus(carSelected.name);
 
   // car gets taken off of available cars list
 }
 
+// rent the car
+function rentCar(rentedCarName) {
+  const availableCars = getAvailableCars();
+
+  const carInStore = availableCars.find((car) => car.name === rentedCarName);
+  if (carInStore) {
+    updateAvailability(carInStore.name, false);
+
+    coloredConsole(
+      `Congratulations you have completed you rent order, the car will be made available to you in 24hrs`,
+      "green"
+    );
+
+    // return an array of the date and the particular car
+    return carInStore;
+  } else {
+    return coloredConsole(
+      `you may want to check the list of cars again and choose from the available cars`,
+      "red"
+    );
+  }
+}
+
+// get cars that are labelled as available
+function getAvailableCars() {
+  const availableCars = cars
+    .filter((car) => car.isAvailable === true)
+    .map((car) => {
+      // get just the name and its classification off the returned cars
+      const { name, classification, status } = car;
+      return { name, classification, status };
+    });
+
+  return availableCars;
+}
+//////////////////////////////////////////////////////////
+
+// BOTH USER AND ADMIN
+/////////////////////////////////////////////////////////
+//update the status of the car
+function updateStatus(nameOfCar, isAdmin = false) {
+  const soughtCar = cars.find((car) => car.name === nameOfCar);
+  if (!soughtCar) {
+    return coloredConsole(
+      "that name is not in the store please try another car"
+    );
+  }
+
+  if (isAdmin) {
+    const isOngoing = confirm("change the car's status to ongoing now??");
+
+    if (!isOngoing) {
+      soughtCar.status = soughtCar.status;
+      coloredConsole(
+        "you did not make any changes to the status of the car",
+        "black"
+      );
+    } else {
+      soughtCar.status = "ongoing";
+    }
+    //this implies the user called this function and automatically changes the status to pending
+  } else {
+    // do something to update status of car;
+    soughtCar.status = "ongoing";
+  }
+
+  // after everything update the store to reflect changes
+  updateStore(cars);
+}
+
+// update the availability of the car
+function updateAvailability(name, isAdmin = false) {
+  const soughtCar = cars.find((car) => car.name === name);
+  if (soughtCar && isAdmin) {
+    const isNowAvailable = confirm("the car is now available??");
+    if (isNowAvailable) {
+      soughtCar.isAvailable = true;
+      console.table(soughtCar);
+    } else {
+      soughtCar.isAvailable = false;
+      console.table(soughtCar);
+    }
+  } else if (soughtCar && !isAdmin) {
+    // to cater for user making updates to availability
+    soughtCar.isAvailable = !soughtCar.isAvailable;
+    // to be updated in 24hrs to ongoing
+    return soughtCar;
+  } else {
+    coloredConsole("sorry no car with that name was found", "red");
+  }
+
+  updateStore(cars);
+  // after everything update our store
+}
+
+// update the store functionality;
+function updateStore(cars) {
+  const storeCars = JSON.stringify(cars);
+  localStorage.setItem("car store", storeCars);
+}
+
+/////////////////////////////////////////////////////////
+
+// Admin
+/////////////////////////////////////////////////////////
 function adminDuties() {
   // you can either add a new car as an admin or update the availability of one
   const adminChoice = confirm("do you want to add a new car??");
@@ -144,11 +259,21 @@ function adminDuties() {
     if (available) {
       const name = prompt("enter the name of the car");
       updateAvailability(name, true);
-    } else {
-      coloredConsole(
-        "sorry you can not perform more than those two actions as an admin",
-        "red"
-      );
+    }
+    // this part theoretically should be done after 24 hours
+    else {
+      const statusUpdate = confirm("do you want to update the status of a car");
+      if (statusUpdate) {
+        const nameOfCar = prompt(
+          "please enter the name of car you want to update"
+        );
+        updateStatus(nameOfCar, true);
+      } else {
+        coloredConsole(
+          "sorry you can not perform more than those two actions as an admin",
+          "red"
+        );
+      }
     }
   }
 }
@@ -188,50 +313,7 @@ function addNewCar() {
   }
 }
 
-function updateAvailability(name, isAdmin = false) {
-  const soughtCar = cars.find((car) => car.name === name);
-  if (soughtCar && isAdmin) {
-    const isNowAvailable = confirm("the car is now available??");
-    if (isNowAvailable) {
-      soughtCar.isAvailable = true;
-      console.table(soughtCar);
-    } else {
-      soughtCar.isAvailable = false;
-      console.table(soughtCar);
-    }
-  } else if (soughtCar && !isAdmin) {
-    // to cater for user making updates to availability
-    soughtCar.isAvailable = !soughtCar.isAvailable;
-  } else {
-    coloredConsole("sorry no car like that was found", "red");
-  }
-
-  updateStore(cars);
-  // after everything update our store
-}
-
-// rent the car
-function rentCar(rentedCarName) {
-  const carInStore = cars.find((car) => car.name === rentedCarName);
-  if (carInStore) {
-    updateAvailability(carInStore.name, false);
-  } else {
-    coloredConsole(
-      `you may want to check the list of cars again and choose from the available cars`,
-      "red"
-    );
-  }
-  coloredConsole(
-    `Congratulations you have completed you rent order, the car will be made available to you in 24hrs`,
-    "green"
-  );
-}
-
-// update the store functionality;
-function updateStore(cars) {
-  const storeCars = JSON.stringify(cars);
-  localStorage.setItem("car store", storeCars);
-}
+////////////////////////////////////////////////////////
 
 // initialize it all with pressing the enter key
 document.addEventListener("keypress", (e) => {
