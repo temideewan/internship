@@ -57,7 +57,7 @@ const cars = localStorageCars || [
     status: null,
   },
   {
-    name: "car2",
+    name: "car4",
     isAvailable: false,
     classification: "A",
     status: null,
@@ -158,7 +158,7 @@ function rentCar(rentedCarName) {
     // return an array of the date and the particular car
     return carInStore;
   } else {
-    return coloredConsole(
+    coloredConsole(
       `you may want to check the list of cars again and choose from the available cars`,
       "red"
     );
@@ -202,10 +202,9 @@ function updateStatus(nameOfCar, isAdmin = false) {
     } else {
       soughtCar.status = "ongoing";
     }
-    //this implies the user called this function and automatically changes the status to pending
   } else {
-    // do something to update status of car;
-    soughtCar.status = "ongoing";
+    //this implies the user called this function and automatically changes the status to pending
+    soughtCar.status = "pending";
   }
 
   // after everything update the store to reflect changes
@@ -270,9 +269,11 @@ function adminDuties() {
         updateStatus(nameOfCar, true);
       } else {
         coloredConsole(
-          "sorry you can not perform more than those two actions as an admin",
+          "sorry you can not perform more than those actions as an admin",
           "red"
         );
+
+        console.table(cars);
       }
     }
   }
